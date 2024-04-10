@@ -19,7 +19,7 @@ body {
 .slide {
   width: 50vw;
   height: 500px;
-  margin: 0 5vw;
+  margin: 0 50px;
   position: relative;
   transition: all 0.7s ease;
 }
