@@ -1,51 +1,91 @@
-const track = document.getElementById("slider");
+const sliders = [...document.querySelectorAll(".slider__container")];
 
-const handleOnDown = (e) => {
-  if (e.clientX !== undefined) {
-    track.dataset.mouseDownAt = e.clientX;
-  } else if (e.touches && e.touches[0].clientX !== undefined) {
-    track.dataset.mouseDownAt = e.touches[0].clientX;
+sliders.forEach((slider, i) => {
+  let isDragStart = false,
+    isDragging = false,
+    isSlide = false,
+    prevPageX,
+    prevScrollLeft,
+    positionDiff;
+
+  const sliderItem = slider.querySelector(".slider__item");
+  var isMultislide = slider.dataset.multislide === "true";
+
+  function autoSlide() {
+    if (
+      slider.scrollLeft - (slider.scrollWidth - slider.clientWidth) > -1 ||
+      slider.scrollLeft <= 0
+    )
+      return;
+    positionDiff = Math.abs(positionDiff);
+    let slideWidth = isMultislide ? slider.clientWidth : sliderItem.clientWidth;
+    let valDifference = slideWidth - positionDiff;
+    if (slider.scrollLeft > prevScrollLeft) {
+      return (slider.scrollLeft +=
+        positionDiff > slideWidth / 5 ? valDifference : -positionDiff);
+    }
+    slider.scrollLeft -=
+      positionDiff > slideWidth / 5 ? valDifference : -positionDiff;
   }
-};
 
-const handleOnUp = () => {
-  track.dataset.mouseDownAt = "0";
-  track.dataset.prevPercentage = track.dataset.percentage;
-};
-
-const handleOnMove = (e) => {
-  if (track.dataset.mouseDownAt === "0") return;
-
-  let clientX;
-  if (e.clientX !== undefined) {
-    clientX = e.clientX;
-  } else if (e.touches && e.touches[0].clientX !== undefined) {
-    clientX = e.touches[0].clientX;
+  function dragStart(e) {
+    if (isSlide) return;
+    isSlide = true;
+    isDragStart = true;
+    prevPageX = e.pageX || e.touches[0].pageX;
+    prevScrollLeft = slider.scrollLeft;
+    slider.classList.add("dragging");
+    setTimeout(function () {
+      isSlide = false;
+    }, 700);
   }
 
-  const mouseDelta = parseFloat(track.dataset.mouseDownAt) - clientX,
-    maxDelta = window.innerWidth;
+  function dragging(e) {
+    if (!isDragStart) return;
+    e.preventDefault();
+    isDragging = true;
+    positionDiff = (e.pageX || e.touches[0].pageX) - prevPageX;
+    slider.scrollLeft = prevScrollLeft - positionDiff;
+  }
 
-  const percentage = (mouseDelta / maxDelta) * -100,
-    nextPercentageUnconstrained =
-      parseFloat(track.dataset.prevPercentage) + percentage,
-    nextPercentage = Math.max(Math.min(nextPercentageUnconstrained, 0), -70);
+  function dragStop() {
+    isDragStart = false;
+    slider.classList.remove("dragging");
+    if (!isDragging) return;
+    isDragging = false;
 
-  track.dataset.percentage = nextPercentage;
+    // Calcula o deslocamento em relação à largura visível do slider
+    let visibleWidth = slider.clientWidth;
+    let items = slider.querySelectorAll(".slider__item");
+    let itemWidth = items[0].offsetWidth; // Largura de um item do slider
+    let scrollableWidth = itemWidth * items.length - visibleWidth;
 
-  track.animate(
-    {
-      transform: `translateX(${nextPercentage}%)`,
-    },
-    { duration: 1200, fill: "forwards" }
-  );
-};
+    // Ajusta a posição final do scroll
+    let finalScrollLeft = Math.max(
+      0,
+      Math.min(slider.scrollLeft - positionDiff, scrollableWidth)
+    );
+    slider.scrollTo({ left: finalScrollLeft, behavior: "smooth" });
+  }
 
-window.addEventListener("mousedown", handleOnDown);
-window.addEventListener("touchstart", handleOnDown);
+  function applyScale() {
+    sliderItem.classList.add("scale-down");
+  }
 
-window.addEventListener("mouseup", handleOnUp);
-window.addEventListener("touchend", handleOnUp);
+  function removeScale() {
+    sliderItem.classList.remove("scale-down");
+  }
 
-window.addEventListener("mousemove", handleOnMove);
-window.addEventListener("touchmove", handleOnMove);
+  addEventListener("resize", autoSlide);
+  slider.addEventListener("mousedown", dragStart);
+  slider.addEventListener("touchstart", dragStart);
+  slider.addEventListener("mousemove", dragging);
+  slider.addEventListener("touchmove", dragging);
+  slider.addEventListener("mouseup", dragStop);
+  slider.addEventListener("touchend", dragStop);
+  slider.addEventListener("mouseleave", dragStop);
+  slider.addEventListener("mousedown", applyScale);
+  slider.addEventListener("mouseup", removeScale);
+  slider.addEventListener("touchstart", applyScale);
+  slider.addEventListener("touchend", removeScale);
+});
