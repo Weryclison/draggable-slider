@@ -33,21 +33,6 @@ body {
   height: 100%;
   object-fit: cover;
 }
-.slide > .text {
-  position: absolute;
-  bottom: 20%;
-  right: -50px;
-  color: white;
-  transition: all 0.4s ease;
-}
-.slide > .text h2 {
-  font-size: 4rem;
-  margin-bottom: 0;
-}
-.slide > .text p {
-  font-size: 1.3rem;
-  margin-top: 0.5rem;
-}
 .slide .photo::before {
   content: "";
   position: absolute;
